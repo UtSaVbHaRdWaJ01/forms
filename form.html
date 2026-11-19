@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>सर्वे फॉर्म</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--p:#673ab7;--bg:#f0ebf8;--err:#d93025;--mut:#5f6368}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);font-family:'Noto Sans Devanagari','Roboto',sans-serif;color:#202124;padding:12px 12px 60px}
+.wrap{max-width:640px;margin:0 auto}
+.card{background:#fff;border:1px solid #dadce0;border-radius:8px;padding:22px 24px;margin-bottom:12px}
+.card.head{border-top:10px solid var(--p);padding-top:18px}
+.card.head h1{font-size:30px;font-weight:500;margin:0 0 10px}
+.card.head p{margin:0;color:var(--mut);font-size:15px;white-space:pre-line}
+.card.head .req{color:var(--err);font-size:13px;margin-top:14px;border-top:1px solid #dadce0;padding-top:10px}
+.card.bad{border-color:var(--err)}
+.q{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:14px}
+.q label,.q .lb{font-size:17px;font-weight:500;line-height:1.5}
+.q .star{color:var(--err)}
+.say{border:none;background:#f1f3f4;border-radius:50%;width:36px;height:36px;flex:none;cursor:pointer;font-size:17px}
+.say:hover{background:#e0e0e0}
+.row{display:flex;gap:10px;align-items:flex-end}
+.row textarea,.row input{flex:1}
+textarea,input[type=text],select{width:100%;font:inherit;font-size:16px;border:none;border-bottom:1px solid #dadce0;padding:8px 2px;background:transparent;outline:none;resize:none;transition:border-color .15s}
+textarea:focus,input[type=text]:focus,select:focus{border-bottom:2px solid var(--p);padding-bottom:7px}
+select{border:1px solid #dadce0;border-radius:4px;padding:10px;background:#fff}
+.mic{width:52px;height:52px;flex:none;border:none;border-radius:50%;background:var(--p);color:#fff;font-size:24px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.mic.on{background:var(--err);animation:pulse 1s infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 10px rgba(217,48,37,.2)}}
+@media(prefers-reduced-motion:reduce){.mic.on{animation:none}}
+.opt{display:flex;align-items:center;gap:12px;padding:10px 6px;border-radius:6px;cursor:pointer;font-size:16px}
+.opt:hover{background:#f6f2fb}
+.opt input{width:20px;height:20px;accent-color:var(--p);flex:none}
+.scale{display:flex;justify-content:space-between;gap:4px;text-align:center}
+.scale label{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:15px;cursor:pointer}
+.scale input{width:22px;height:22px;accent-color:var(--p)}
+.err{color:var(--err);font-size:13px;margin-top:10px;display:none}
+.bad .err{display:block}
+.btns{display:flex;justify-content:space-between;align-items:center}
+button.main{background:var(--p);color:#fff;border:none;border-radius:4px;padding:11px 26px;font:inherit;font-size:15px;font-weight:500;cursor:pointer}
+button.main:hover{background:#5b32a3}
+button.link{background:none;border:none;color:var(--p);font:inherit;font-size:15px;cursor:pointer}
+:focus-visible{outline:2px solid var(--p);outline-offset:2px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{border:1px solid #dadce0;padding:6px 8px;text-align:left;vertical-align:top}
+th{background:#f1f3f4;position:sticky;top:0}
+.scroll{overflow:auto;max-height:60vh}
+.foot{text-align:center;color:var(--mut);font-size:12px;margin-top:20px}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+
+<script>
+/* =========================================================
+   1) APNA FORM YAHAN BANAO  (sirf yeh hissa edit karna hai)
+   type: text | paragraph | radio | checkbox | dropdown | scale
+   voice: true => mic button (text/paragraph me by default true)
+   ========================================================= */
+const FORM = {
+  title: "ग्राम सर्वेक्षण 2026",
+  description: "कृपया नीचे दिए गए प्रश्नों के उत्तर दें।\nआप बोलकर 🎤 भी जवाब दे सकते हैं।",
+  questions: [
+    { id: "name",    label: "आपका नाम क्या है?",              type: "text",      required: true },
+    { id: "age",     label: "आपकी उम्र क्या है?",             type: "radio",     required: true,
+      options: ["18 से कम", "18–30", "31–50", "50 से ऊपर"] },
+    { id: "water",   label: "आपके घर में पानी कहाँ से आता है?", type: "checkbox",
+      options: ["हैंडपंप", "नल", "कुआँ", "टैंकर"] },
+    { id: "road",    label: "सड़क की हालत कैसी है?",            type: "dropdown",
+      options: ["बहुत अच्छी", "ठीक-ठाक", "खराब", "बहुत खराब"] },
+    { id: "rating",  label: "सरकारी सेवाओं को 1 से 5 में रेटिंग दें", type: "scale", min: 1, max: 5,
+      lowLabel: "बहुत कम", highLabel: "बहुत अच्छी" },
+    { id: "problem", label: "आपकी सबसे बड़ी समस्या क्या है?",    type: "paragraph", required: true }
+  ]
+};
+
+/* Google Sheet ka Apps Script URL (khali chhodo to sirf is browser me save hoga) */
+const SHEET_URL = "https://script.google.com/macros/s/AKfycbxzMWkPBtpp-Sw7dxaEAj2uAENNZu8k-kUSLwvsb1YEl7MO8HYHF-vd4P23QBZjDWFnrg/exec";
+const LANG = "hi-IN";          // voice language
+const SILENCE_MS = 3000;       // itni der chup rehne par mic band hoga (ms)
+const STORE = "survey_responses_v1";
+
+/* ========================= code ========================= */
+const $ = (s, r = document) => r.querySelector(s);
+const app = $("#app");
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const getAll = () => { try { return JSON.parse(localStorage.getItem(STORE) || "[]"); } catch { return []; } };
+
+function render() {
+  if (location.search.includes("admin")) return renderAdmin();
+  let h = `<div class="card head"><h1>${esc(FORM.title)}</h1><p>${esc(FORM.description)}</p>
+           <div class="req">* आवश्यक प्रश्न</div></div><form id="f" novalidate>`;
+  FORM.questions.forEach(q => {
+    const voice = q.voice ?? (q.type === "text" || q.type === "paragraph");
+    h += `<div class="card" data-id="${q.id}"><div class="q"><div class="lb">${esc(q.label)}${q.required ? ' <span class="star">*</span>' : ""}</div>
+          <button type="button" class="say" title="प्रश्न सुनें" aria-label="प्रश्न सुनें" data-say="${esc(q.label)}">🔊</button></div>`;
+    if (q.type === "text" || q.type === "paragraph") {
+      const el = q.type === "text" ? `<input type="text" name="${q.id}" placeholder="आपका उत्तर">`
+                                   : `<textarea name="${q.id}" rows="3" placeholder="आपका उत्तर"></textarea>`;
+      h += `<div class="row">${el}${voice ? `<button type="button" class="mic" aria-label="बोलकर लिखें">🎤</button>` : ""}</div>`;
+    } else if (q.type === "radio" || q.type === "checkbox") {
+      h += q.options.map(o => `<label class="opt"><input type="${q.type}" name="${q.id}" value="${esc(o)}"><span>${esc(o)}</span></label>`).join("");
+    } else if (q.type === "dropdown") {
+      h += `<select name="${q.id}"><option value="">चुनें</option>${q.options.map(o => `<option>${esc(o)}</option>`).join("")}</select>`;
+    } else if (q.type === "scale") {
+      let s = ""; for (let i = q.min; i <= q.max; i++) s += `<label><span>${i}</span><input type="radio" name="${q.id}" value="${i}"></label>`;
+      h += `<div class="scale">${s}</div>` + (q.lowLabel ? `<div style="display:flex;justify-content:space-between;color:var(--mut);font-size:13px;margin-top:6px"><span>${esc(q.lowLabel)}</span><span>${esc(q.highLabel || "")}</span></div>` : "");
+    }
+    h += `<div class="err">⚠ यह प्रश्न आवश्यक है</div></div>`;
+  });
+  h += `<div class="btns"><button type="submit" class="main">जमा करें</button><button type="reset" class="link">फॉर्म साफ़ करें</button></div></form>`;
+  app.innerHTML = h;
+  $("#f").addEventListener("submit", submit);
+  $("#f").addEventListener("input", e => e.target.closest(".card")?.classList.remove("bad"));
+  setupVoice();
+}
+
+/* ---------- voice: mic (speech to text) + speaker (read question) ---------- */
+let active = null;
+function setupVoice() {
+  document.querySelectorAll(".say").forEach(b => b.onclick = () => {
+    if (!("speechSynthesis" in window)) return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(b.dataset.say); u.lang = LANG; speechSynthesis.speak(u);
+  });
+  document.querySelectorAll(".mic").forEach(btn => btn.onclick = () => {
+    if (!SR) return alert("कृपया Chrome ब्राउज़र में खोलें");
+    if (location.protocol === "file:") return alert("फ़ाइल को डबल-क्लिक करके न खोलें। VS Code में Live Server से खोलें (http://127.0.0.1:5500)");
+    if (active && active.btn === btn) return active.finish();   // dobara tap = band
+    if (active) active.finish();
+
+    const box = btn.closest(".row").querySelector("input,textarea");
+    const rec = new SR();
+    let base = box.value ? box.value + " " : "";
+    let done = false, timer = null;
+    rec.lang = LANG; rec.interimResults = true;
+    rec.continuous = true;            // chup hone par khud band na ho
+
+    // SILENCE_MS tak kuch na bola jaye tabhi band karo
+    const arm = () => { clearTimeout(timer); timer = setTimeout(finish, SILENCE_MS); };
+    function finish() { done = true; clearTimeout(timer); try { rec.stop(); } catch {} }
+
+    rec.onstart = () => { btn.classList.add("on"); arm(); };
+    rec.onresult = e => {
+      let t = ""; for (const r of e.results) t += r[0].transcript;
+      box.value = base + t;
+      box.dispatchEvent(new Event("input", { bubbles: true }));
+      arm();                            // bolte raho to timer dobara shuru
+    };
+    rec.onerror = e => {
+      console.log("mic error:", e.error);
+      if (e.error === "aborted") return;
+      done = true;
+      const m = {
+        "not-allowed": "माइक्रोफ़ोन की अनुमति बंद है। एड्रेस बार के 🔒 आइकन पर क्लिक करके Microphone को Allow करें, फिर पेज रीफ़्रेश करें।",
+        "service-not-allowed": "ब्राउज़र ने आवाज़ सेवा रोक दी है। Chrome में खोलें और अनुमति दें।",
+        "no-speech": "आवाज़ सुनाई नहीं दी, फिर कोशिश करें",
+        "audio-capture": "माइक्रोफ़ोन नहीं मिला। देखें कि माइक लगा है और किसी दूसरे ऐप में इस्तेमाल नहीं हो रहा।",
+        "network": "इंटरनेट कनेक्शन जाँचें",
+        "language-not-supported": "यह भाषा सपोर्ट नहीं है"
+      };
+      alert(m[e.error] || ("माइक में समस्या: " + e.error));
+    };
+    rec.onend = () => {
+      if (!done) {                      // Chrome ne beech me khud roka -> dobara chalu
+        base = box.value ? box.value + " " : "";
+        try { rec.start(); return; } catch { /* neeche band hoga */ }
+      }
+      clearTimeout(timer); btn.classList.remove("on"); active = null;
+    };
+
+    active = { rec, btn, finish };
+    try { rec.start(); } catch (err) { console.log(err); active = null; alert("माइक शुरू नहीं हो पाया: " + err.message); }
+  });
+}
+
+/* ---------- submit ---------- */
+function collectOne(q) {
+  const els = [...document.querySelectorAll(`[name="${q.id}"]`)];
+  if (q.type === "checkbox") return els.filter(e => e.checked).map(e => e.value).join(", ");
+  if (q.type === "radio" || q.type === "scale") return els.find(e => e.checked)?.value || "";
+  return (els[0]?.value || "").trim();
+}
+function collect() { const out = {}; FORM.questions.forEach(q => out[q.id] = collectOne(q)); return out; }
+
+async function submit(e) {
+  e.preventDefault();
+  const data = collect(); let first = null;
+  FORM.questions.forEach(q => {
+    const card = $(`.card[data-id="${q.id}"]`), bad = q.required && !data[q.id];
+    card.classList.toggle("bad", bad); if (bad && !first) first = card;
+  });
+  if (first) return first.scrollIntoView({ behavior: "smooth", block: "center" });
+
+  const row = { time: new Date().toLocaleString("en-IN") };
+  FORM.questions.forEach(q => row[q.label] = data[q.id]);
+  const all = getAll(); all.push(row); localStorage.setItem(STORE, JSON.stringify(all)); // local backup
+
+  const btn = $(".main"); btn.disabled = true; btn.textContent = "भेज रहे हैं…";
+  if (SHEET_URL) {
+    try { await fetch(SHEET_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain" }, body: JSON.stringify(row) }); }
+    catch { alert("Sheet में नहीं जा पाया, पर उत्तर इस डिवाइस में सुरक्षित है।"); }
+  }
+  app.innerHTML = `<div class="card head"><h1>${esc(FORM.title)}</h1><p>आपका उत्तर दर्ज हो गया है। धन्यवाद! 🙏</p>
+    <div class="req"><button class="link" onclick="render()">दूसरा उत्तर भेजें</button></div></div>`;
+  scrollTo(0, 0);
+}
+
+/* ---------- admin: form.html?admin ---------- */
+function renderAdmin() {
+  const all = getAll(), cols = ["time", ...FORM.questions.map(q => q.label)];
+  app.innerHTML = `<div class="card head"><h1>उत्तर (${all.length})</h1><p>सिर्फ इस ब्राउज़र में सेव हुए उत्तर। सबके उत्तर के लिए Google Sheet जोड़ें।</p></div>
+    <div class="card"><div class="btns" style="margin-bottom:14px"><button class="main" id="dl">CSV डाउनलोड करें</button><button class="link" id="clr">सब मिटाएँ</button></div>
+    <div class="scroll"><table><tr>${cols.map(c => `<th>${esc(c)}</th>`).join("")}</tr>
+    ${all.map(r => `<tr>${cols.map(c => `<td>${esc(r[c] ?? "")}</td>`).join("")}</tr>`).join("")}</table></div></div>`;
+  $("#dl").onclick = () => {
+    const csv = [cols, ...all.map(r => cols.map(c => r[c] ?? ""))].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" }));
+    a.download = "survey_responses.csv"; a.click();
+  };
+  $("#clr").onclick = () => { if (confirm("सारे उत्तर मिट जाएँगे। पक्का?")) { localStorage.removeItem(STORE); renderAdmin(); } };
+}
+render();
+</script>
+</body>
+</html>
